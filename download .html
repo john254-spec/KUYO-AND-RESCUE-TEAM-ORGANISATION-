@@ -1,0 +1,14 @@
+<div class="container">
+<h2>Downloads</h2>
+<div id="list"></div>
+</div>
+
+<script>
+fetch('/api/downloads')
+.then(r=>r.json())
+.then(files=>{
+list.innerHTML = files.map(f=>
+`<a href="/uploads/${f}" download>${f}</a><br>`
+).join('');
+});
+</script>
