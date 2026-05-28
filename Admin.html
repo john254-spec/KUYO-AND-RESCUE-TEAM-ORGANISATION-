@@ -1,26 +1,154 @@
-<div class="container">
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Upload Panel</title>
 
-<h2>Admin Upload</h2>
+<link rel="stylesheet" href="style.css">
 
-<input type="file" id="file">
-<button onclick="upload()">Upload</button>
+</head>
+
+<body>
+
+<div class="dashboard">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<img src="images/logo.png" class="logo">
+
+<h2>Dashboard</h2>
+
+<a href="dashboard.html">Dashboard</a>
+
+<a href="upload.html">Upload Files</a>
+
+<a href="downloads.html">Downloads</a>
+
+<a href="about.html">About Us</a>
+
+<a href="mission.html">Mission</a>
+
+<a href="vision.html">Vision</a>
+
+<a href="objectives.html">Objectives</a>
+
+<a href="core-values.html">Core Values</a>
+
+<a href="contact.html">Contact</a>
+
+<a href="support.html">Support</a>
+
+<a href="login.html">Logout</a>
+
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+<div class="center-box">
+
+<h1 style="text-align:center; color:green;">
+Admin Upload Panel
+</h1>
+
+<p style="text-align:center;">
+Only administrators can upload files.
+</p>
+
+<br>
+
+<input
+type="file"
+id="file"
+>
+
+<button onclick="uploadFile()">
+Upload File
+</button>
+
+<br><br>
+
+<div id="status"></div>
+
+</div>
+
+</div>
 
 </div>
 
 <script>
-async function upload(){
 
-const form = new FormData();
-form.append('file',file.files[0]);
+async function uploadFile(){
 
-const res = await fetch('/api/upload',{
-method:'POST',
-headers:{
-Authorization:'Bearer '+localStorage.getItem('token')
-},
-body:form
-});
+const token =
+localStorage.getItem('token');
 
-alert((await res.json()).message);
+if(!token){
+
+alert('Please login first');
+
+window.location.href='login.html';
+
+return;
+
 }
-  </script>
+
+const fileInput =
+document.getElementById('file');
+
+if(fileInput.files.length === 0){
+
+alert('Please select a file');
+
+return;
+
+}
+
+const formData = new FormData();
+
+formData.append(
+'file',
+fileInput.files[0]
+);
+
+try{
+
+const res = await fetch(
+'http://localhost:10000/api/upload',
+{
+method:'POST',
+
+headers:{
+Authorization:'Bearer ' + token
+},
+
+body:formData
+}
+);
+
+const data = await res.json();
+
+document.getElementById('status')
+.innerHTML = `
+<p style="color:green; text-align:center;">
+${data.message}
+</p>
+`;
+
+}catch(error){
+
+document.getElementById('status')
+.innerHTML = `
+<p style="color:red; text-align:center;">
+Upload failed
+</p>
+`;
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
