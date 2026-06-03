@@ -2,10 +2,10 @@
   "name": "kuyo-rescue-team",
   "version": "1.0.0",
   "description": "KUYO AND RESCUE TEAM ORGANISATION backend using Supabase",
-  "main": "backend/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "dev": "nodemon backend/server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "engines": {
     "node": ">=18"
