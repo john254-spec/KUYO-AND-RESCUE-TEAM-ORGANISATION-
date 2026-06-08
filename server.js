@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
-
+const path = require('path');
 const app = express();
 
 const PORT = process.env.PORT || 10000;
