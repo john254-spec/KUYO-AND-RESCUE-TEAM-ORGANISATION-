@@ -8,26 +8,36 @@ const multer = require('multer');
 const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
+
 const app = express();
 
+// ✅ IMPORTANT: Render uses PORT automatically
 const PORT = process.env.PORT || 10000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// -------------------- DATABASE --------------------
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false }
+    : false
 });
 
+// -------------------- SUPABASE --------------------
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// -------------------- MIDDLEWARE --------------------
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ✅ FIX 1: static path must exist or fallback breaks routes
 app.use(express.static(path.join(__dirname, 'public')));
 
+// -------------------- FILE UPLOAD --------------------
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -35,13 +45,12 @@ const upload = multer({
   }
 });
 
+// -------------------- AUTH --------------------
 function auth(req, res, next) {
   const header = req.headers.authorization;
 
   if (!header) {
-    return res.status(401).json({
-      message: 'No token provided'
-    });
+    return res.status(401).json({ message: 'No token provided' });
   }
 
   const token = header.split(' ')[1];
@@ -49,32 +58,26 @@ function auth(req, res, next) {
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
-  } catch {
-    return res.status(403).json({
-      message: 'Invalid token'
-    });
+  } catch (err) {
+    return res.status(403).json({ message: 'Invalid token' });
   }
 }
 
+// -------------------- ADMIN --------------------
 function admin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({
-      message: 'Admins only'
-    });
+    return res.status(403).json({ message: 'Admins only' });
   }
-
   next();
 }
 
+// -------------------- SIGNUP --------------------
 app.post('/api/signup', async (req, res) => {
   try {
-
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({
-        message: 'All fields required'
-      });
+      return res.status(400).json({ message: 'All fields required' });
     }
 
     const exists = await pool.query(
@@ -82,10 +85,8 @@ app.post('/api/signup', async (req, res) => {
       [email]
     );
 
-    if (exists.rows.length) {
-      return res.status(400).json({
-        message: 'User already exists'
-      });
+    if (exists.rows.length > 0) {
+      return res.status(400).json({ message: 'User already exists' });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -95,21 +96,17 @@ app.post('/api/signup', async (req, res) => {
       [name, email, hashed, 'user']
     );
 
-    res.json({
-      message: 'Account created'
-    });
+    res.json({ message: 'Account created' });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      message: 'Server error'
-    });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
+// -------------------- LOGIN --------------------
 app.post('/api/login', async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     const result = await pool.query(
@@ -117,23 +114,16 @@ app.post('/api/login', async (req, res) => {
       [email]
     );
 
-    if (!result.rows.length) {
-      return res.status(400).json({
-        message: 'User not found'
-      });
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: 'User not found' });
     }
 
     const user = result.rows[0];
 
-    const valid = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {
-      return res.status(400).json({
-        message: 'Wrong password'
-      });
+      return res.status(400).json({ message: 'Wrong password' });
     }
 
     const token = jwt.sign(
@@ -143,9 +133,7 @@ app.post('/api/login', async (req, res) => {
         role: user.role
       },
       JWT_SECRET,
-      {
-        expiresIn: '7d'
-      }
+      { expiresIn: '7d' }
     );
 
     res.json({
@@ -156,72 +144,50 @@ app.post('/api/login', async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      message: 'Server error'
-    });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-app.post(
-  '/api/upload',
-  auth,
-  admin,
-  upload.single('file'),
-  async (req, res) => {
-
-    try {
-
-      if (!req.file) {
-        return res.status(400).json({
-          message: 'No file uploaded'
-        });
-      }
-
-      const fileName =
-        Date.now() + '-' + req.file.originalname;
-
-      const { error } =
-        await supabase.storage
-          .from('kuyo-files')
-          .upload(
-            fileName,
-            req.file.buffer,
-            {
-              contentType: req.file.mimetype
-            }
-          );
-
-      if (error) {
-        return res.status(500).json(error);
-      }
-
-      const publicUrl =
-        supabase.storage
-          .from('kuyo-files')
-          .getPublicUrl(fileName)
-          .data.publicUrl;
-
-      res.json({
-        message: 'Upload successful',
-        url: publicUrl
-      });
-
-    } catch (err) {
-      console.error(err);
-
-      res.status(500).json({
-        message: 'Upload failed'
-      });
+// -------------------- UPLOAD --------------------
+app.post('/api/upload', auth, admin, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
     }
-  }
-);
 
-app.get('/api/files', async (req, res) => {
+    const fileName = `${Date.now()}-${req.file.originalname}`;
 
-  const { data, error } =
-    await supabase.storage
+    const { error } = await supabase.storage
       .from('kuyo-files')
-      .list();
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype
+      });
+
+    if (error) {
+      return res.status(500).json(error);
+    }
+
+    const publicUrl = supabase.storage
+      .from('kuyo-files')
+      .getPublicUrl(fileName)
+      .data.publicUrl;
+
+    res.json({
+      message: 'Upload successful',
+      url: publicUrl
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Upload failed' });
+  }
+});
+
+// -------------------- FILE LIST --------------------
+app.get('/api/files', async (req, res) => {
+  const { data, error } = await supabase.storage
+    .from('kuyo-files')
+    .list();
 
   if (error) {
     return res.status(500).json(error);
@@ -229,25 +195,28 @@ app.get('/api/files', async (req, res) => {
 
   const files = data.map(file => ({
     name: file.name,
-    url:
-      supabase.storage
-        .from('kuyo-files')
-        .getPublicUrl(file.name)
-        .data.publicUrl
+    url: supabase.storage
+      .from('kuyo-files')
+      .getPublicUrl(file.name)
+      .data.publicUrl
   }));
 
   res.json(files);
 });
 
+// -------------------- FRONTEND ROUTES --------------------
+
+// ✅ FIX 2: avoid confusion — explicit root first
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ✅ FIX 3: SPA fallback MUST be last
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// -------------------- START SERVER --------------------
 app.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
-
