@@ -274,9 +274,7 @@ app.get('/api/status', (req, res) => {
     service: 'KUYO Rescue Team'
   });
 });
-app.get('/', (req, res) => {
-  res.send('KUYO Rescue Team API is running 🚀');
-});
+
 
 // KEEP THIS LAST
 app.get('*', (req, res) => {
