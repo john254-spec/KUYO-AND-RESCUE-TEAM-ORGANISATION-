@@ -207,15 +207,78 @@ app.get('/api/files', async (req, res) => {
 // -------------------- FRONTEND ROUTES --------------------
 
 // ✅ FIX 2: avoid confusion — explicit root first
+
+// -------------------- FRONTEND ROUTES --------------------
+
+// Home
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ✅ FIX 3: SPA fallback MUST be last
+// Authentication Pages
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/signup', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+});
+
+app.get('/forgot-password', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'forgot-password.html'));
+});
+
+app.get('/reset-password', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'reset-password.html'));
+});
+
+// Organization Pages
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'about.html'));
+});
+
+app.get('/mission', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'mission.html'));
+});
+
+app.get('/vision', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'vision.html'));
+});
+
+app.get('/objectives', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'objectives.html'));
+});
+
+app.get('/core-values', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'core-values.html'));
+});
+
+app.get('/contact', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'contact.html'));
+});
+
+// Admin Dashboard
+app.get('/admin', auth, admin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Logo
+app.get('/logo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'logo.png'));
+});
+
+// Health Check
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'online',
+    service: 'KUYO Rescue Team'
+  });
+});
+
+// KEEP THIS LAST
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 // -------------------- START SERVER --------------------
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
