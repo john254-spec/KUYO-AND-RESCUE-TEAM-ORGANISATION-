@@ -1,66 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>KUYO & RESCUE TEAM Dashboard</title>
+  <title>Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <header>
-  <h1>KUYO & RESCUE TEAM</h1>
-  <p>Emergency Rescue & Humanitarian Support System</p>
+  <h1>KUYO & RESCUE TEAM DASHBOARD</h1>
 </header>
 
 <div class="dashboard">
 
-<!-- SIDEBAR -->
 <div class="sidebar">
 
 <h2>Menu</h2>
 
 <a href="/dashboard">Dashboard</a>
-
-<hr>
-
-<h3>Organization</h3>
 <a href="/about">About Us</a>
 <a href="/mission">Mission</a>
 <a href="/vision">Vision</a>
 <a href="/objectives">Objectives</a>
 <a href="/core-values">Core Values</a>
-
-<hr>
-
-<h3>Support</h3>
 <a href="/contact">Contact</a>
 <a href="/support">Support</a>
 <a href="/downloads">Downloads</a>
-
-<hr>
-
-<h3>Account</h3>
-<a href="/login">Login</a>
-<a href="/signup">Sign Up</a>
 
 <button onclick="logout()">Logout</button>
 
 </div>
 
-<!-- MAIN CONTENT -->
 <div class="main-content">
 
 <h1>Dashboard</h1>
 
-<p id="userInfo">Loading user...</p>
+<p id="userInfo">Loading...</p>
 
-<!-- ADMIN ONLY -->
-<div id="adminBox" style="display:none; margin-top:20px; padding:10px; border:1px solid #ccc;">
-  <h3>🔐 Admin Upload Panel</h3>
+<div id="adminPanel" style="display:none; margin-top:20px;">
+  <h3>Admin Upload</h3>
 
   <form id="uploadForm">
-    <input type="file" id="file" required />
-    <button type="submit">Upload File</button>
+    <input type="file" id="file" required>
+    <button type="submit">Upload</button>
   </form>
 
   <p id="uploadMsg"></p>
@@ -73,44 +55,33 @@
 <script>
 const token = localStorage.getItem('token');
 
-if (!token) {
-  window.location.href = '/login';
-}
+if (!token) window.location.href = '/login';
 
-// ---------------- PROFILE ----------------
+// PROFILE
 async function loadUser() {
-  try {
-    const res = await fetch('/api/profile', {
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    });
+  const res = await fetch('/api/profile', {
+    headers: { Authorization: 'Bearer ' + token }
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (!res.ok || data.error) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-      return;
-    }
-
-    document.getElementById('userInfo').innerText =
-      `Logged in as: ${data.email} | Role: ${data.role || 'user'}`;
-
-    // SHOW ADMIN PANEL
-    if (data.role === 'admin') {
-      document.getElementById('adminBox').style.display = 'block';
-    }
-
-  } catch (err) {
-    console.error(err);
+  if (!res.ok) {
+    localStorage.removeItem('token');
     window.location.href = '/login';
+    return;
+  }
+
+  document.getElementById('userInfo').innerText =
+    `Logged in as: ${data.email} | Role: ${data.role}`;
+
+  if (data.role === 'admin') {
+    document.getElementById('adminPanel').style.display = 'block';
   }
 }
 
 loadUser();
 
-// ---------------- UPLOAD (ADMIN ONLY) ----------------
+// UPLOAD
 document.getElementById('uploadForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -121,9 +92,7 @@ document.getElementById('uploadForm')?.addEventListener('submit', async (e) => {
 
   const res = await fetch('/api/upload', {
     method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + token
-    },
+    headers: { Authorization: 'Bearer ' + token },
     body: formData
   });
 
@@ -133,7 +102,7 @@ document.getElementById('uploadForm')?.addEventListener('submit', async (e) => {
     data.message || data.error;
 });
 
-// ---------------- LOGOUT ----------------
+// LOGOUT
 function logout() {
   localStorage.removeItem('token');
   window.location.href = '/login';
