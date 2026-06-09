@@ -1,14 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Downloads</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+  <h1>Secure Downloads</h1>
+</header>
+
 <div class="container">
+
 <h2>Downloads</h2>
-<div id="list"></div>
+
+<p id="status">Checking access...</p>
+
+<div id="files" style="display:none;">
+  <p>📁 Available File:</p>
+  <a href="/uploads/sample.pdf" download>Download File</a>
+</div>
+
 </div>
 
 <script>
-fetch('/api/downloads')
-.then(r=>r.json())
-.then(files=>{
-list.innerHTML = files.map(f=>
-`<a href="/uploads/${f}" download>${f}</a><br>`
-).join('');
-});
+const token = localStorage.getItem('token');
+
+if (!token) {
+  window.location.href = '/login';
+}
+
+document.getElementById('status').innerText = "Access granted";
+document.getElementById('files').style.display = "block";
 </script>
+
+</body>
+</html>
