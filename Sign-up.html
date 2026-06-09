@@ -6,9 +6,7 @@
 </head>
 <body>
 
-<header>
-  <h1>KUYO & RESCUE TEAM</h1>
-</header>
+<header><h1>KUYO & RESCUE TEAM</h1></header>
 
 <div class="container">
 
@@ -16,79 +14,39 @@
 
 <form id="signupForm">
 
-<input
-type="text"
-id="name"
-placeholder="Full Name"
-required
->
+<input type="email" id="email" placeholder="Email" required>
+<input type="password" id="password" placeholder="Password" required>
 
-<input
-type="email"
-id="email"
-placeholder="Email Address"
-required
->
-
-<input
-type="password"
-id="password"
-placeholder="Password"
-required
->
-
-<button type="submit">
-Create Account
-</button>
+<button type="submit">Sign Up</button>
 
 </form>
-
-<p>
-Already have an account?
-<a href="login.html">Login</a>
-</p>
 
 </div>
 
 <script>
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-document.getElementById('signupForm')
-.addEventListener('submit', async (e)=>{
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
 
-e.preventDefault();
+  const res = await fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
 
-const name =
-document.getElementById('name').value;
+  const data = await res.json();
 
-const email =
-document.getElementById('email').value;
+  if (!res.ok) {
+    alert(data.error || 'Signup failed');
+    return;
+  }
 
-const password =
-document.getElementById('password').value;
-
-const res = await fetch('/api/signup',{
-method:'POST',
-headers:{
-'Content-Type':'application/json'
-},
-body:JSON.stringify({
-name,
-email,
-password
-})
+  alert('Account created successfully');
+  window.location.href = '/login';
 });
-
-const data = await res.json();
-
-alert(data.message);
-
-if(data.message === 'Account created'){
-window.location.href='login.html';
-}
-
-});
-
 </script>
 
 </body>
-  </html>
+</html>
