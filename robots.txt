@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kuyo-and-rescue-team-organisation.onrender.com/sitemap.xml
